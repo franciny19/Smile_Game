@@ -4,18 +4,19 @@ let tentativas = 0;
 let acertos = 0;
 let jogar = true;
 
+const IDS_VALIDOS = ["0", "1", "2", "3", "4", "5"];
+
 // Captura os botões pelos IDs
 const btnReiniciar = document.getElementById('reiniciar');
 const btnJogarNovamente = document.getElementById('joganovamente');
 
-// Função que zera os valores das variáveis controladoras
+// Reinicia o jogo
 function reiniciar() {
   desempenho = 0;
   tentativas = 0;
   acertos = 0;
   jogar = true;
-  removerTrofeu();
-  jogarNovamente();
+  jogarNovamente(); // já chama removerTrofeu()
   atualizaPlacar(0, 0);
   btnJogarNovamente.className = 'visivel';
   btnReiniciar.className = 'invisivel';
@@ -24,21 +25,18 @@ function reiniciar() {
 // Função jogar novamente
 function jogarNovamente() {
   jogar = true;
-  let divis = document.getElementsByTagName("div");
-  for (let i = 0; i < divis.length; i++) {
-    if (["0", "1", "2", "3", "4", "5"].includes(divis[i].id)) {
-      divis[i].className = "inicial";
-      const erroSpan = divis[i].querySelector(".mensagem-erro");
-      if (erroSpan) {
-        erroSpan.remove();
-      }
-    }
-  }
 
-  let imagem = document.getElementById("imagem");
-  if (imagem != null) {
-    imagem.remove();
-  }
+  IDS_VALIDOS.forEach(id => {
+    const carta = document.getElementById(id);
+    if (carta) {
+      carta.className = "inicial";
+      const erroSpan = carta.querySelector(".mensagem-erro");
+      if (erroSpan) erroSpan.remove();
+    }
+  });
+
+  const imagem = document.getElementById("imagem");
+  if (imagem) imagem.remove();
 
   removerTrofeu();
 }
@@ -47,22 +45,18 @@ function jogarNovamente() {
 function atualizaPlacar(acertos, tentativas) {
   desempenho = (acertos / tentativas) * 100;
   document.getElementById("resposta").innerHTML =
-    "Placar - Acertos: " + acertos + " Tentativas: " + tentativas + " Desempenho: " + Math.round(desempenho) + "%";
+    `Placar - Acertos: ${acertos} Tentativas: ${tentativas} Desempenho: ${Math.round(desempenho)}%`;
 
-  // Tremor se desempenho for 0 e houver pelo menos uma tentativa
   if (desempenho === 0 && tentativas > 0) {
-    let cartas = document.querySelectorAll("div[id]");
-    cartas.forEach(carta => {
-      if (["0", "1", "2", "3", "4", "5"].includes(carta.id)) {
+    IDS_VALIDOS.forEach(id => {
+      const carta = document.getElementById(id);
+      if (carta) {
         carta.classList.add("tremer");
-        setTimeout(() => {
-          carta.classList.remove("tremer");
-        }, 500);
+        setTimeout(() => carta.classList.remove("tremer"), 500);
       }
     });
   }
 
-  // Mostra o troféu apenas se acertar todas as 6 tentativas
   if (acertos === 6 && tentativas === 6) {
     mostrarTrofeu();
   } else {
@@ -79,7 +73,7 @@ function mostrarSmile(obj) {
   obj.appendChild(img);
 }
 
-// Jogador acertou: mostra Smile + confetes
+// Jogador acertou
 function acertou(obj) {
   mostrarSmile(obj);
   confetti({
@@ -89,7 +83,7 @@ function acertou(obj) {
   });
 }
 
-// Exibe a mensagem de "ERROU" na carta errada
+// Mostra mensagem de erro
 function mostrarErro(obj) {
   const erroSpan = document.createElement("span");
   erroSpan.textContent = "ERROU";
@@ -97,35 +91,35 @@ function mostrarErro(obj) {
   obj.appendChild(erroSpan);
 }
 
-// Sorteia um número aleatório e verifica se o jogador acertou
+// Verifica o acerto
 function verifica(obj) {
-  if (jogar) {
-    jogar = false;
-    tentativas++;
-
-    if (tentativas == 6) {
-      btnJogarNovamente.className = 'invisivel';
-      btnReiniciar.className = 'visivel';
-    }
-
-    let sorteado = Math.floor(Math.random() * 6);
-    if (obj.id == sorteado) {
-      acertou(obj);
-      acertos++;
-    } else {
-      obj.className = "errou";
-      const objSorteado = document.getElementById(sorteado);
-      mostrarSmile(objSorteado);
-      mostrarErro(obj);
-    }
-
-    atualizaPlacar(acertos, tentativas);
-  } else {
+  if (!jogar) {
     alert('Clique em "Jogar novamente"');
+    return;
   }
+
+  jogar = false;
+  tentativas++;
+
+  if (tentativas === 6) {
+    btnJogarNovamente.className = 'invisivel';
+    btnReiniciar.className = 'visivel';
+  }
+
+  const sorteado = Math.floor(Math.random() * 6);
+  if (obj.id == sorteado) {
+    acertou(obj);
+    acertos++;
+  } else {
+    obj.className = "errou";
+    mostrarSmile(document.getElementById(sorteado));
+    mostrarErro(obj);
+  }
+
+  atualizaPlacar(acertos, tentativas);
 }
 
-// Mostra troféu se 6 acertos em 6 tentativas
+// Mostra troféu
 function mostrarTrofeu() {
   if (!document.getElementById("trofeu")) {
     const img = new Image(100);
@@ -135,14 +129,13 @@ function mostrarTrofeu() {
   }
 }
 
-// Remove troféu se desempenho não for 100% com 6 acertos
+// Remove troféu
 function removerTrofeu() {
   const trofeu = document.getElementById("trofeu");
-  if (trofeu) {
-    trofeu.remove();
-  }
+  if (trofeu) trofeu.remove();
 }
 
-// Adiciona eventos aos botões
+// Eventos dos botões
 btnJogarNovamente.addEventListener('click', jogarNovamente);
 btnReiniciar.addEventListener('click', reiniciar);
+
